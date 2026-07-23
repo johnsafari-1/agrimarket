@@ -1,0 +1,16 @@
+# Real credentials — never commit this. Use config.sample.php as the template.
+config.php
+
+# User-uploaded product images (keep the folder, ignore its contents)
+uploads/*
+!uploads/.gitkeep
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# Logs
+*.log
