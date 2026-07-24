@@ -4,6 +4,8 @@
 -- Import via phpMyAdmin or: mysql -u root < database.sql
 -- =====================================================================
 
+CREATE DATABASE IF NOT EXISTS farmer_marketplace CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE farmer_marketplace;
 
 -- ---------------------------------------------------------------------
 -- USERS: farmers, buyers, administrators (Table 3.3)

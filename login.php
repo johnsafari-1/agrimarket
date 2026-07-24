@@ -5,6 +5,7 @@ $errors = [];
 
 // ---- Login handling (unchanged logic) ----
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_csrf();
     $email    = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
 
@@ -195,6 +196,7 @@ $flash = get_flash();
 
       <!-- ---------- SIGN IN ---------- -->
       <form class="panel <?= $active_tab === 'login' ? 'active' : '' ?>" id="panel-login" method="post" action="login.php" novalidate>
+        <?= csrf_field() ?>
         <div>
           <h2>Welcome back</h2>
           <p class="sub">Sign in to manage your listings, orders and messages.</p>
@@ -223,6 +225,7 @@ $flash = get_flash();
 
       <!-- ---------- CREATE ACCOUNT ---------- -->
       <form class="panel <?= $active_tab === 'register' ? 'active' : '' ?>" id="panel-register" method="post" action="register.php" novalidate>
+        <?= csrf_field() ?>
         <div>
           <h2>Join the marketplace</h2>
           <p class="sub">Choose your role, then set up your account.</p>

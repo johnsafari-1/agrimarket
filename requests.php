@@ -48,6 +48,7 @@ function find_matches(PDO $pdo, string $title, string $description, string $cate
 
 // --- Create a new request ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'create') {
+    require_csrf();
     $title       = trim($_POST['title'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $category    = $_POST['category'] ?? 'Other';
@@ -75,6 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
 
 // --- Accept an offer ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'accept_offer') {
+    require_csrf();
     $offer_id = (int)($_POST['offer_id'] ?? 0);
     $stmt = $pdo->prepare(
         'SELECT ro.*, pr.buyer_id, pr.quantity AS req_qty
@@ -152,6 +154,7 @@ include __DIR__ . '/header.php';
           <div class="alert alert-danger py-2"><?= e($err) ?></div>
         <?php endforeach; ?>
         <form method="post">
+          <?= csrf_field() ?>
           <input type="hidden" name="action" value="create">
           <div class="mb-3">
             <label class="form-label">Title</label>
@@ -248,6 +251,7 @@ include __DIR__ . '/header.php';
                     <td>
                       <?php if ($o['status'] === 'Pending' && $r['status'] === 'Open'): ?>
                         <form method="post" onsubmit="return confirm('Accept this offer? Other offers will be declined.');">
+                          <?= csrf_field() ?>
                           <input type="hidden" name="action" value="accept_offer">
                           <input type="hidden" name="offer_id" value="<?= (int)$o['offer_id'] ?>">
                           <button class="btn btn-sm btn-success">Accept</button>

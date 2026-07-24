@@ -12,6 +12,7 @@ $allowed_transitions = [
 
 // Status update (only for orders containing this farmer's products)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_csrf();
     $oid = (int)($_POST['order_id'] ?? 0);
     $new = $_POST['new_status'] ?? '';
 
@@ -88,6 +89,7 @@ include __DIR__ . '/header.php';
               <?php $next = $allowed_transitions[$o['status']] ?? []; ?>
               <?php if ($next): ?>
                 <form method="post" class="d-flex gap-1">
+                  <?= csrf_field() ?>
                   <input type="hidden" name="order_id" value="<?= (int)$o['order_id'] ?>">
                   <select name="new_status" class="form-select form-select-sm">
                     <?php foreach ($next as $n): ?>

@@ -4,6 +4,7 @@ require_login('Admin');
 $page_title = 'Manage Users';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_csrf();
     $uid = (int)($_POST['user_id'] ?? 0);
     $action = $_POST['action'] ?? '';
     if ($uid && $uid !== (int)current_user_id()) { // admin cannot act on own account
@@ -63,6 +64,7 @@ include __DIR__ . '/header.php';
           <td>
             <?php if ((int)$u['user_id'] !== (int)current_user_id()): ?>
               <form method="post" class="d-inline">
+                <?= csrf_field() ?>
                 <input type="hidden" name="user_id" value="<?= (int)$u['user_id'] ?>">
                 <input type="hidden" name="action" value="toggle">
                 <button class="btn btn-sm btn-outline-warning" title="Activate/Deactivate">
@@ -70,6 +72,7 @@ include __DIR__ . '/header.php';
               </form>
               <?php if ($u['role'] !== 'Admin'): ?>
                 <form method="post" class="d-inline" onsubmit="return confirm('Delete this user and all their data?');">
+                  <?= csrf_field() ?>
                   <input type="hidden" name="user_id" value="<?= (int)$u['user_id'] ?>">
                   <input type="hidden" name="action" value="delete">
                   <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>

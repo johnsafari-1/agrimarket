@@ -31,6 +31,7 @@ if (!$items) {
 
 $errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_csrf();
     $address = trim($_POST['delivery_address'] ?? '');
     $method  = $_POST['payment_method'] ?? '';
     $phone   = trim($_POST['phone_number'] ?? '');
@@ -142,6 +143,7 @@ include __DIR__ . '/header.php';
       <div class="card-header bg-white fw-bold">Delivery &amp; Payment</div>
       <div class="card-body">
         <form method="post">
+          <?= csrf_field() ?>
           <div class="mb-3">
             <label class="form-label">Delivery Address</label>
             <textarea name="delivery_address" class="form-control" rows="3" required

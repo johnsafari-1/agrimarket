@@ -49,6 +49,7 @@ include __DIR__ . '/header.php';
 
     <?php if (current_role() === 'Buyer' && $p['status'] === 'Available' && $p['quantity'] > 0): ?>
       <form method="post" action="cart.php" class="row g-2 align-items-end" style="max-width:340px;">
+        <?= csrf_field() ?>
         <input type="hidden" name="action" value="add">
         <input type="hidden" name="product_id" value="<?= (int)$p['product_id'] ?>">
         <div class="col-6">

@@ -7,6 +7,7 @@ $me = current_user_id();
 
 // Send a message
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_csrf();
     $to      = (int)($_POST['to'] ?? 0);
     $content = trim($_POST['content'] ?? '');
     $chk = $pdo->prepare("SELECT user_id FROM users WHERE user_id = ? AND role IN ('Farmer','Buyer') AND is_active = 1");
@@ -106,6 +107,7 @@ include __DIR__ . '/header.php';
         </div>
         <div class="card-footer bg-white">
           <form method="post" class="d-flex gap-2">
+            <?= csrf_field() ?>
             <input type="hidden" name="to" value="<?= (int)$partner['user_id'] ?>">
             <input type="text" name="content" class="form-control" placeholder="Type a message..." required autofocus>
             <button class="btn btn-success"><i class="bi bi-send"></i></button>

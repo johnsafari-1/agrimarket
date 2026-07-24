@@ -10,6 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: login.php?tab=register');
     exit;
 }
+require_csrf();
 
 $full_name = trim($_POST['full_name'] ?? '');
 $email     = trim($_POST['email'] ?? '');

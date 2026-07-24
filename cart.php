@@ -7,6 +7,7 @@ $_SESSION['cart'] = $_SESSION['cart'] ?? []; // [product_id => ['quantity' => n]
 
 // --- Cart actions ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_csrf();
     $action = $_POST['action'] ?? '';
     $pid    = (int)($_POST['product_id'] ?? 0);
 
@@ -70,6 +71,7 @@ include __DIR__ . '/header.php';
             <td><?= format_money($p['price']) ?> / <?= e($p['unit']) ?></td>
             <td>
               <form method="post" class="d-flex gap-1">
+                <?= csrf_field() ?>
                 <input type="hidden" name="action" value="update">
                 <input type="hidden" name="product_id" value="<?= (int)$p['product_id'] ?>">
                 <input type="number" name="quantity" class="form-control form-control-sm"
@@ -80,6 +82,7 @@ include __DIR__ . '/header.php';
             <td><?= format_money($it['sub']) ?></td>
             <td>
               <form method="post">
+                <?= csrf_field() ?>
                 <input type="hidden" name="action" value="remove">
                 <input type="hidden" name="product_id" value="<?= (int)$p['product_id'] ?>">
                 <button class="btn btn-sm btn-outline-danger" title="Remove"><i class="bi bi-trash"></i></button>

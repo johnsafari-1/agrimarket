@@ -39,6 +39,7 @@ if (!$is_owner && !$is_seller && current_role() !== 'Admin') {
 // Buyer may cancel while order is still Pending.
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'cancel'
     && $is_owner && $order['status'] === 'Pending') {
+    require_csrf();
     $pdo->prepare("UPDATE orders SET status = 'Cancelled' WHERE order_id = ?")->execute([$id]);
     // Return reserved stock
     $restock = $pdo->prepare('UPDATE products SET quantity = quantity + ? WHERE product_id = ?');
@@ -124,6 +125,7 @@ include __DIR__ . '/header.php';
     </div>
     <?php if ($is_owner && $order['status'] === 'Pending'): ?>
       <form method="post" onsubmit="return confirm('Cancel this order?');">
+        <?= csrf_field() ?>
         <input type="hidden" name="action" value="cancel">
         <button class="btn btn-outline-danger w-100"><i class="bi bi-x-circle"></i> Cancel Order</button>
       </form>

@@ -27,6 +27,7 @@ $page_title = $editing ? 'Edit Product' : 'Add Product';
 
 $errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_csrf();
     $name  = trim($_POST['product_name'] ?? '');
     $desc  = trim($_POST['description'] ?? '');
     $price = (float)($_POST['price'] ?? 0);
@@ -98,6 +99,7 @@ include __DIR__ . '/header.php';
           <div class="alert alert-danger py-2"><?= e($err) ?></div>
         <?php endforeach; ?>
         <form method="post" enctype="multipart/form-data">
+          <?= csrf_field() ?>
           <?php if ($editing): ?><input type="hidden" name="id" value="<?= (int)$id ?>"><?php endif; ?>
           <div class="mb-3">
             <label class="form-label">Product Name</label>

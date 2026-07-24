@@ -100,6 +100,29 @@ function unread_count(PDO $pdo) {
     return (int)$stmt->fetch()['c'];
 }
 
+/** CSRF protection: one token per session, checked on every state-changing POST. */
+function csrf_token() {
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+/** Hidden input to drop inside every <form method="post">. */
+function csrf_field() {
+    return '<input type="hidden" name="csrf_token" value="' . e(csrf_token()) . '">';
+}
+
+/** Call at the top of every POST handler. Aborts the request if the token is missing/invalid. */
+function require_csrf() {
+    $sent     = $_POST['csrf_token'] ?? '';
+    $expected = $_SESSION['csrf_token'] ?? '';
+    if ($expected === '' || $sent === '' || !hash_equals($expected, $sent)) {
+        http_response_code(403);
+        die('Your session expired or this request could not be verified. Please go back, refresh the page, and try again.');
+    }
+}
+
 /** Bootstrap badge colour per order status. */
 function status_badge($status) {
     $map = [

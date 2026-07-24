@@ -4,6 +4,7 @@ require_login('Admin');
 $page_title = 'Moderate Products';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_csrf();
     $pid = (int)($_POST['product_id'] ?? 0);
     $action = $_POST['action'] ?? '';
     if ($pid && $action === 'delete') {
@@ -46,11 +47,13 @@ include __DIR__ . '/header.php';
           <td><span class="badge bg-<?= $p['status'] === 'Available' ? 'success' : 'secondary' ?>"><?= e($p['status']) ?></span></td>
           <td>
             <form method="post" class="d-inline">
+              <?= csrf_field() ?>
               <input type="hidden" name="product_id" value="<?= (int)$p['product_id'] ?>">
               <input type="hidden" name="action" value="toggle">
               <button class="btn btn-sm btn-outline-warning" title="Hide/Show"><i class="bi bi-eye-slash"></i></button>
             </form>
             <form method="post" class="d-inline" onsubmit="return confirm('Remove this product?');">
+              <?= csrf_field() ?>
               <input type="hidden" name="product_id" value="<?= (int)$p['product_id'] ?>">
               <input type="hidden" name="action" value="delete">
               <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>

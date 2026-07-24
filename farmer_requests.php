@@ -8,6 +8,7 @@ $errors = [];
 
 // --- Submit an offer ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_csrf();
     $request_id = (int)($_POST['request_id'] ?? 0);
     $product_id = (int)($_POST['product_id'] ?? 0) ?: null;
     $message    = trim($_POST['message'] ?? '');
@@ -98,6 +99,7 @@ include __DIR__ . '/header.php';
             </div>
           <?php else: ?>
             <form method="post" class="mt-auto pt-2 border-top">
+              <?= csrf_field() ?>
               <input type="hidden" name="request_id" value="<?= (int)$r['request_id'] ?>">
               <?php if ($my_products): ?>
                 <div class="mb-2">
