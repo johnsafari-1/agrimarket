@@ -18,6 +18,8 @@ CREATE TABLE users (
     role          ENUM('Farmer','Buyer','Admin') NOT NULL DEFAULT 'Buyer',
     phone         VARCHAR(20),
     is_active     TINYINT(1) NOT NULL DEFAULT 1,
+    failed_login_attempts TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    locked_until  DATETIME NULL,
     created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 

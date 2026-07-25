@@ -3,7 +3,7 @@ require_once __DIR__ . '/config.php';
 $page_title = 'Sign in';
 $errors = [];
 
-// ---- Login handling (unchanged logic) ----
+// ---- Login handling ----
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_csrf();
     $email    = trim($_POST['email'] ?? '');
@@ -13,10 +13,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->execute([$email]);
     $user = $stmt->fetch();
 
-    if ($user && password_verify($password, $user['password_hash'])) {
+    $locked = $user && $user['locked_until'] && strtotime($user['locked_until']) > time();
+
+    if ($locked) {
+        $mins = max(1, ceil((strtotime($user['locked_until']) - time()) / 60));
+        $errors[] = "Too many failed sign-in attempts. Please try again in about $mins minute" . ($mins === 1 ? '' : 's') . ".";
+    } elseif ($user && password_verify($password, $user['password_hash'])) {
         if (!$user['is_active']) {
             $errors[] = 'Your account has been deactivated. Contact the administrator.';
         } else {
+            // Successful login: clear any lockout state
+            $pdo->prepare('UPDATE users SET failed_login_attempts = 0, locked_until = NULL WHERE user_id = ?')
+                ->execute([$user['user_id']]);
             session_regenerate_id(true);
             $_SESSION['user_id']   = (int)$user['user_id'];
             $_SESSION['full_name'] = $user['full_name'];
@@ -26,7 +34,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
     } else {
-        $errors[] = 'Invalid email or password.';
+        if ($user) {
+            $attempts = (int)$user['failed_login_attempts'] + 1;
+            if ($attempts >= 5) {
+                $pdo->prepare('UPDATE users SET failed_login_attempts = 0, locked_until = DATE_ADD(NOW(), INTERVAL 15 MINUTE) WHERE user_id = ?')
+                    ->execute([$user['user_id']]);
+                $errors[] = 'Too many failed sign-in attempts. Please try again in about 15 minutes.';
+            } else {
+                $pdo->prepare('UPDATE users SET failed_login_attempts = ? WHERE user_id = ?')
+                    ->execute([$attempts, $user['user_id']]);
+                $errors[] = 'Invalid email or password.';
+            }
+        } else {
+            // Unknown email — same generic message, no attempt tracking possible (and no need to)
+            $errors[] = 'Invalid email or password.';
+        }
     }
 }
 

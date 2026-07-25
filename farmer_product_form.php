@@ -44,19 +44,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Optional image upload
     $image_url = $product['image_url'];
     if (!empty($_FILES['image']['name']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-        $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
-        if (!in_array($ext, ['jpg','jpeg','png','gif','webp'], true)) {
-            $errors[] = 'Image must be a JPG, PNG, GIF, or WEBP file.';
-        } elseif ($_FILES['image']['size'] > 3 * 1024 * 1024) {
+        if ($_FILES['image']['size'] > 3 * 1024 * 1024) {
             $errors[] = 'Image must be smaller than 3 MB.';
         } else {
-            $dir = __DIR__ . '/uploads';
-            if (!is_dir($dir)) mkdir($dir, 0777, true);
-            $fname = 'uploads/prod_' . $fid . '_' . time() . '.' . $ext;
-            if (move_uploaded_file($_FILES['image']['tmp_name'], __DIR__ . '/' . $fname)) {
-                $image_url = $fname;
+            // Verify the file is actually an image by inspecting its real content/header,
+            // not just trusting the filename extension the browser sent.
+            $info = @getimagesize($_FILES['image']['tmp_name']);
+            $allowed_types = [
+                IMAGETYPE_JPEG => 'jpg',
+                IMAGETYPE_PNG  => 'png',
+                IMAGETYPE_GIF  => 'gif',
+                IMAGETYPE_WEBP => 'webp',
+            ];
+            if ($info === false || !isset($allowed_types[$info[2]])) {
+                $errors[] = 'That file is not a valid JPG, PNG, GIF, or WEBP image.';
             } else {
-                $errors[] = 'Failed to save the uploaded image.';
+                // Extension is derived from the verified image type, never from user input,
+                // so a disguised file (e.g. "shell.php.jpg") can't smuggle through.
+                $ext = $allowed_types[$info[2]];
+                $dir = __DIR__ . '/uploads';
+                if (!is_dir($dir)) mkdir($dir, 0777, true);
+                $fname = 'uploads/prod_' . $fid . '_' . time() . '.' . $ext;
+                if (move_uploaded_file($_FILES['image']['tmp_name'], __DIR__ . '/' . $fname)) {
+                    $image_url = $fname;
+                } else {
+                    $errors[] = 'Failed to save the uploaded image.';
+                }
             }
         }
     }

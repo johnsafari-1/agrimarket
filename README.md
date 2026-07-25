@@ -1,6 +1,6 @@
 # Farmer-Buyer Agricultural Marketplace Management System (AgriMarket)
 
- Plain PHP + MySQL, built for XAMPP.
+Group 5 Team Project — Kabarak University. Plain PHP + MySQL, built for XAMPP.
 
 ## Requirements
 
