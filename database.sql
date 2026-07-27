@@ -20,6 +20,9 @@ CREATE TABLE users (
     is_active     TINYINT(1) NOT NULL DEFAULT 1,
     failed_login_attempts TINYINT UNSIGNED NOT NULL DEFAULT 0,
     locked_until  DATETIME NULL,
+    is_verified   TINYINT(1) NOT NULL DEFAULT 0,
+    verification_token VARCHAR(64) NULL,
+    verification_sent_at DATETIME NULL,
     created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
@@ -52,6 +55,8 @@ CREATE TABLE orders (
     total_amount     DECIMAL(12,2) NOT NULL DEFAULT 0,
     status           ENUM('Pending','Confirmed','Shipped','Delivered','Cancelled') NOT NULL DEFAULT 'Pending',
     delivery_address VARCHAR(255) NOT NULL,
+    estimated_delivery_date DATE NULL,
+    estimated_delivery_window ENUM('Morning','Afternoon','Evening') NULL,
     order_date       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_orders_buyer FOREIGN KEY (buyer_id) REFERENCES users(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
@@ -139,12 +144,12 @@ CREATE TABLE messages (
 -- SEED DATA  (all passwords are: password123)
 -- Hash generated with PHP password_hash('password123', PASSWORD_DEFAULT)
 -- =====================================================================
-INSERT INTO users (full_name, email, password_hash, role, phone) VALUES
-('System Administrator', 'admin@agrimarket.co.ke',  '$2y$10$qSJ2RCPfbatR8BJVdfISwO6u3bg6axk2kYKWiO1EypAZzEsob071q', 'Admin',  '0700000001'),
-('John Kiprop',          'john@farmer.co.ke',        '$2y$10$qSJ2RCPfbatR8BJVdfISwO6u3bg6axk2kYKWiO1EypAZzEsob071q', 'Farmer', '0700000002'),
-('Mary Wanjiku',         'mary@farmer.co.ke',        '$2y$10$qSJ2RCPfbatR8BJVdfISwO6u3bg6axk2kYKWiO1EypAZzEsob071q', 'Farmer', '0700000003'),
-('Peter Otieno',         'peter@buyer.co.ke',        '$2y$10$qSJ2RCPfbatR8BJVdfISwO6u3bg6axk2kYKWiO1EypAZzEsob071q', 'Buyer',  '0700000004'),
-('Grace Muthoni',        'grace@buyer.co.ke',        '$2y$10$qSJ2RCPfbatR8BJVdfISwO6u3bg6axk2kYKWiO1EypAZzEsob071q', 'Buyer',  '0700000005');
+INSERT INTO users (full_name, email, password_hash, role, phone, is_verified) VALUES
+('System Administrator', 'admin@agrimarket.co.ke',  '$2y$10$qSJ2RCPfbatR8BJVdfISwO6u3bg6axk2kYKWiO1EypAZzEsob071q', 'Admin',  '0700000001', 1),
+('John Kiprop',          'john@farmer.co.ke',        '$2y$10$qSJ2RCPfbatR8BJVdfISwO6u3bg6axk2kYKWiO1EypAZzEsob071q', 'Farmer', '0700000002', 1),
+('Mary Wanjiku',         'mary@farmer.co.ke',        '$2y$10$qSJ2RCPfbatR8BJVdfISwO6u3bg6axk2kYKWiO1EypAZzEsob071q', 'Farmer', '0700000003', 1),
+('Peter Otieno',         'peter@buyer.co.ke',        '$2y$10$qSJ2RCPfbatR8BJVdfISwO6u3bg6axk2kYKWiO1EypAZzEsob071q', 'Buyer',  '0700000004', 1),
+('Grace Muthoni',        'grace@buyer.co.ke',        '$2y$10$qSJ2RCPfbatR8BJVdfISwO6u3bg6axk2kYKWiO1EypAZzEsob071q', 'Buyer',  '0700000005', 1);
 
 INSERT INTO products (farmer_id, product_name, description, price, quantity, unit, category) VALUES
 (2, 'Fresh Maize',        'Newly harvested dry maize, well dried and sorted.',        55.00,  500, 'kg',    'Cereals'),

@@ -20,7 +20,7 @@ include __DIR__ . '/header.php';
   <div class="table-responsive">
     <table class="table align-middle bg-white shadow-sm">
       <thead class="table-success">
-        <tr><th>Order #</th><th>Date</th><th>Items</th><th>Total</th><th>Status</th><th></th></tr>
+        <tr><th>Order #</th><th>Date</th><th>Items</th><th>Total</th><th>Status</th><th>Expected Delivery</th><th></th></tr>
       </thead>
       <tbody>
         <?php foreach ($orders as $o): ?>
@@ -30,6 +30,13 @@ include __DIR__ . '/header.php';
             <td><?= (int)$o['item_count'] ?></td>
             <td><?= format_money($o['total_amount']) ?></td>
             <td><?= status_badge($o['status']) ?></td>
+            <td class="small">
+              <?php if ($o['estimated_delivery_date']): ?>
+                <?= e(date('d M', strtotime($o['estimated_delivery_date']))) ?>, <?= e($o['estimated_delivery_window']) ?>
+              <?php else: ?>
+                <span class="text-muted">&mdash;</span>
+              <?php endif; ?>
+            </td>
             <td><a class="btn btn-sm btn-outline-success" href="order.php?id=<?= (int)$o['order_id'] ?>">Track / View</a></td>
           </tr>
         <?php endforeach; ?>

@@ -114,6 +114,11 @@ include __DIR__ . '/header.php';
       <div class="card-header bg-white fw-bold">Delivery &amp; Payment</div>
       <div class="card-body small">
         <p><strong>Status:</strong> <?= status_badge($order['status']) ?></p>
+        <?php if ($order['estimated_delivery_date']): ?>
+          <p><strong>Expected delivery:</strong>
+             <?= e(date('d M Y', strtotime($order['estimated_delivery_date']))) ?>
+             (<?= e($order['estimated_delivery_window']) ?>)</p>
+        <?php endif; ?>
         <p><strong>Delivery address:</strong><br><?= nl2br(e($order['delivery_address'])) ?></p>
         <?php foreach ($txns as $t): ?>
           <p class="mb-1"><strong>Payment:</strong> <?= e($t['payment_method']) ?> &mdash;
