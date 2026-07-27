@@ -41,10 +41,20 @@ if ($errors) {
     exit;
 }
 
+$token = bin2hex(random_bytes(32));
+
 $stmt = $pdo->prepare(
-    'INSERT INTO users (full_name, email, password_hash, role, phone) VALUES (?, ?, ?, ?, ?)'
+    'INSERT INTO users (full_name, email, password_hash, role, phone, is_verified, verification_token, verification_sent_at)
+     VALUES (?, ?, ?, ?, ?, 0, ?, NOW())'
 );
-$stmt->execute([$full_name, $email, password_hash($password, PASSWORD_DEFAULT), $role, $phone]);
-set_flash('success', 'Account created successfully. You can now sign in.');
+$stmt->execute([$full_name, $email, password_hash($password, PASSWORD_DEFAULT), $role, $phone, $token]);
+
+$sent = send_verification_email($email, $full_name, $token);
+
+if ($sent) {
+    set_flash('success', 'Account created! We\'ve sent a verification link to ' . e($email) . ' — click it to activate your account before signing in.');
+} else {
+    set_flash('warning', 'Account created, but the verification email could not be sent right now. Use "Resend verification email" on the sign-in page once you\'re ready to try again.');
+}
 header('Location: login.php');
 exit;
