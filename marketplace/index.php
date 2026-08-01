@@ -36,12 +36,76 @@ $products = $stmt->fetchAll();
 
 include __DIR__ . '/header.php';
 ?>
-<div class="p-4 mb-4 rounded-3" style="background: linear-gradient(120deg,#1B2416,#263320); color:#F3EEE0;">
-  <h2 class="fw-bold" style="color:#F3EEE0;">Agricultural Marketplace</h2>
-  <p class="mb-0" style="color:#EAE2CC;">Order maize, milk, vegetables and more straight from the farmers who grow them.</p>
+<div class="hero-banner mb-4">
+  <div class="hero-copy">
+    <span class="hero-eyebrow">Kenya's farm-direct marketplace</span>
+    <h1>Fresh from the farm,<br>straight to <em>you</em>.</h1>
+    <p>Farmers list what they've harvested. Buyers order straight from them. No broker in between marking up the price.</p>
+    <a href="#browse" class="btn btn-lg hero-cta">Browse the Marketplace</a>
+  </div>
+  <div class="hero-photo">
+    <img src="assets/images/hero-market.jpg" alt="Fresh produce stall at a Kenyan market">
+  </div>
 </div>
 
-<form class="row g-2 mb-4" method="get">
+<div class="category-strip mb-4">
+  <a href="index.php?category=Vegetables" class="category-card">
+    <img src="assets/images/category-vegetables.jpg" alt="Fresh vegetables">
+    <span>Shop Vegetables</span>
+  </a>
+  <a href="index.php?category=Fruits" class="category-card">
+    <img src="assets/images/category-fruits.jpg" alt="Fresh fruit stall">
+    <span>Shop Fruits</span>
+  </a>
+</div>
+
+<style>
+  .hero-banner{
+    display:grid; grid-template-columns:1.1fr 1fr; align-items:stretch;
+    background:linear-gradient(120deg,#1B2416,#263320);
+    border-radius:1rem; overflow:hidden; min-height:340px;
+  }
+  .hero-copy{ padding:2.75rem 2.5rem; display:flex; flex-direction:column; justify-content:center; color:#F3EEE0; }
+  .hero-eyebrow{
+    font-family:'IBM Plex Mono',monospace; font-size:.72rem; letter-spacing:.12em; text-transform:uppercase;
+    color:#E3A857; margin-bottom:.9rem; display:block;
+  }
+  .hero-copy h1{ font-weight:700; font-size:clamp(1.9rem,3vw,2.6rem); line-height:1.12; margin-bottom:1rem; color:#fff; }
+  .hero-copy h1 em{ font-style:italic; color:#E3A857; }
+  .hero-copy p{ color:#EAE2CC; max-width:36ch; margin-bottom:1.5rem; }
+  .hero-cta{
+    align-self:flex-start; background:#E3A857; border:none; color:#1B2416; font-weight:600;
+  }
+  .hero-cta:hover{ background:#cf9645; color:#1B2416; }
+  .hero-photo{ position:relative; min-height:260px; }
+  .hero-photo img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .hero-photo::after{
+    content:""; position:absolute; inset:0;
+    background:linear-gradient(90deg, rgba(27,36,22,0.55), transparent 35%);
+  }
+  @media (max-width:820px){
+    .hero-banner{ grid-template-columns:1fr; }
+    .hero-photo{ min-height:200px; order:-1; }
+  }
+
+  .category-strip{ display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+  .category-card{
+    position:relative; display:block; border-radius:.75rem; overflow:hidden; min-height:150px;
+    text-decoration:none;
+  }
+  .category-card img{ width:100%; height:100%; object-fit:cover; position:absolute; inset:0; transition:transform .25s ease; }
+  .category-card:hover img{ transform:scale(1.05); }
+  .category-card::before{
+    content:""; position:absolute; inset:0; background:linear-gradient(0deg, rgba(27,36,22,0.75), rgba(27,36,22,0.05));
+  }
+  .category-card span{
+    position:absolute; left:1.1rem; bottom:.9rem; color:#fff; font-weight:600; font-size:1.05rem;
+    text-shadow:0 1px 4px rgba(0,0,0,.4);
+  }
+  @media (max-width:600px){ .category-strip{ grid-template-columns:1fr; } }
+</style>
+
+<form id="browse" class="row g-2 mb-4" method="get">
   <div class="col-md-5">
     <input type="text" name="q" class="form-control" placeholder="Search products..." value="<?= e($search) ?>">
   </div>

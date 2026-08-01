@@ -1,0 +1,28 @@
+# Defense-in-depth: this folder should only ever serve images.
+# Even if a malicious file somehow got past the upload validation in
+# farmer_product_form.php, it can never be executed as a script here.
+
+# Apache 2.4+
+<IfModule mod_authz_core.c>
+    <FilesMatch "\.(php|php\d|phtml|pht|phar|cgi|pl|py|sh)$">
+        Require all denied
+    </FilesMatch>
+</IfModule>
+
+# Apache 2.2 fallback
+<IfModule !mod_authz_core.c>
+    <FilesMatch "\.(php|php\d|phtml|pht|phar|cgi|pl|py|sh)$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+</IfModule>
+
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
