@@ -247,7 +247,10 @@ $flash = get_flash();
                  value="<?= e($_POST['email'] ?? '') ?>" required>
         </div>
         <div class="field">
-          <label for="loginPassword">Password</label>
+          <label for="loginPassword" class="d-flex justify-content-between align-items-baseline">
+            <span>Password</span>
+            <a href="forgot_password.php" class="small fw-normal text-decoration-none" style="text-transform:none; letter-spacing:normal; color:var(--gold-dim);">Forgot password?</a>
+          </label>
           <input type="password" id="loginPassword" name="password" placeholder="********" required>
         </div>
         <button type="submit" class="submit-btn">Sign in</button>
