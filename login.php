@@ -26,7 +26,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Please verify your email before signing in.';
             $show_resend_link = true;
         } else {
-            // Successful login: clear any lockout state
             $pdo->prepare('UPDATE users SET failed_login_attempts = 0, locked_until = NULL WHERE user_id = ?')
                 ->execute([$user['user_id']]);
             session_regenerate_id(true);
@@ -50,13 +49,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $errors[] = 'Invalid email or password.';
             }
         } else {
-            // Unknown email — same generic message, no attempt tracking possible (and no need to)
             $errors[] = 'Invalid email or password.';
         }
     }
 }
 
-// ---- Register errors round-tripped from register.php ----
 $reg_errors = $_SESSION['reg_errors'] ?? [];
 $reg_old    = $_SESSION['reg_old'] ?? [];
 unset($_SESSION['reg_errors'], $_SESSION['reg_old']);
@@ -85,8 +82,6 @@ $flash = get_flash();
   *{ box-sizing:border-box; }
   body{ margin:0; min-height:100vh; font-family:var(--sans); color:var(--ink); background:var(--soil); }
   .stage{ display:grid; grid-template-columns:1.1fr 1fr; min-height:100vh; }
-
-  /* ---------- Brand panel ---------- */
   .brand-panel{
     position:relative;
     background:
@@ -96,34 +91,23 @@ $flash = get_flash();
     color:var(--cream); padding:4.5rem 3.5rem 3rem;
     display:flex; flex-direction:column; justify-content:space-between; overflow:hidden;
   }
-  .brand-mark{
-    display:flex; align-items:center; gap:.55rem;
-  }
+  .brand-mark{ display:flex; align-items:center; gap:.55rem; }
   .brand-mark svg{ width:22px; height:22px; flex-shrink:0; }
-  .brand-mark span{
-    font-family:var(--serif); font-weight:600; font-size:1.08rem; letter-spacing:.01em; color:var(--gold);
-  }
+  .brand-mark span{ font-family:var(--serif); font-weight:600; font-size:1.08rem; letter-spacing:.01em; color:var(--gold); }
   .brand-hero h1{
     font-family:var(--serif); font-weight:600; font-size:clamp(2.4rem, 4vw, 3.4rem);
     line-height:1.05; margin:2.2rem 0 1.1rem; max-width:11ch;
   }
   .brand-hero h1 em{ font-style:italic; font-weight:500; color:var(--gold); }
   .brand-hero p{ max-width:38ch; font-size:1.02rem; line-height:1.55; color:var(--cream-2); }
-
-  .role-legend{
-    display:flex; gap:1.75rem; margin-top:2.2rem;
-    font-family:var(--mono); font-size:.72rem; color:var(--cream-2);
-  }
+  .role-legend{ display:flex; gap:1.75rem; margin-top:2.2rem; font-family:var(--mono); font-size:.72rem; color:var(--cream-2); }
   .role-legend div{ display:flex; align-items:center; gap:.5rem; }
   .swatch{ width:10px; height:10px; border-radius:2px; }
-
-  /* ---------- Auth panel ---------- */
   .auth-panel{ background:var(--cream); display:flex; align-items:center; justify-content:center; padding:2.5rem 2rem; }
   .ticket-card{
     position:relative; width:100%; max-width:420px; background:#fff;
     border:1px solid #DED3B4; box-shadow:0 22px 46px -30px rgba(27,36,22,0.45);
   }
-
   .tabs{ display:flex; border-bottom:1px solid var(--cream-2); }
   .tab{
     flex:1; padding:1rem 0; background:none; border:none;
@@ -131,16 +115,12 @@ $flash = get_flash();
     transition:color .15s ease; text-align:center;
   }
   .tab.active{ color:var(--ink); }
-  .tab.active::after{
-    content:""; position:absolute; left:1.5rem; right:1.5rem; bottom:-1px; height:2px; background:var(--gold);
-  }
+  .tab.active::after{ content:""; position:absolute; left:1.5rem; right:1.5rem; bottom:-1px; height:2px; background:var(--gold); }
   .tab:focus-visible, button:focus-visible, input:focus-visible{ outline:2px solid var(--buyer); outline-offset:2px; }
-
   .panel{ display:none; padding:1.9rem 1.75rem 2.1rem; flex-direction:column; gap:1.1rem; }
   .panel.active{ display:flex; }
   .panel h2{ font-family:var(--serif); font-size:1.5rem; font-weight:600; margin:0 0 .15rem; }
   .panel .sub{ margin:0 0 .3rem; font-size:.86rem; color:#75705E; }
-
   label{
     font-size:.76rem; font-weight:600; letter-spacing:.03em; text-transform:uppercase;
     color:#5B5644; display:block; margin-bottom:.35rem;
@@ -152,7 +132,6 @@ $flash = get_flash();
   }
   input::placeholder{ color:#B0A688; }
   .row-2{ display:grid; grid-template-columns:1fr 1fr; gap:.9rem; }
-
   .stamp-row{ display:flex; gap:.8rem; }
   .stamp{
     flex:1; border:1.5px dashed #C9BC93; background:#FCFAF3; border-radius:var(--radius);
@@ -164,24 +143,18 @@ $flash = get_flash();
   .stamp.selected{ border-style:solid; color:#fff; }
   .stamp.selected[data-role="Farmer"]{ background:var(--sage); border-color:var(--sage); }
   .stamp.selected[data-role="Buyer"]{ background:var(--buyer); border-color:var(--buyer); }
-
   .submit-btn{
     margin-top:.4rem; padding:.85rem 1rem; border:none; border-radius:var(--radius);
     background:var(--ink); color:var(--cream);
     font-family:var(--sans); font-weight:600; font-size:.94rem; cursor:pointer; transition:background .15s ease;
   }
   .submit-btn:hover{ background:#111710; }
-
   .aux-row{ display:flex; justify-content:space-between; align-items:center; font-size:.82rem; }
-  .aux-row button{
-    color:var(--gold-dim); background:none; border:none; padding:0; font:inherit; cursor:pointer;
-  }
+  .aux-row button{ color:var(--gold-dim); background:none; border:none; padding:0; font:inherit; cursor:pointer; }
   .aux-row button:hover{ text-decoration:underline; }
-
   .form-msg{ font-size:.82rem; padding:.6rem .75rem; border-radius:var(--radius); }
   .form-msg.success{ background:#EAF1E4; color:#3D5A2C; }
   .form-msg.error{ background:#F6E4DD; color:var(--error); }
-
   @media (max-width: 860px){
     .stage{ grid-template-columns:1fr; }
     .brand-panel{ padding:2.6rem 1.6rem 2rem; }
@@ -225,7 +198,6 @@ $flash = get_flash();
         <button class="tab <?= $active_tab === 'register' ? 'active' : '' ?>" data-tab="register" type="button">Create account</button>
       </div>
 
-      <!-- ---------- SIGN IN ---------- -->
       <form class="panel <?= $active_tab === 'login' ? 'active' : '' ?>" id="panel-login" method="post" action="login.php" novalidate>
         <?= csrf_field() ?>
         <div>
@@ -260,7 +232,6 @@ $flash = get_flash();
         </div>
       </form>
 
-      <!-- ---------- CREATE ACCOUNT ---------- -->
       <form class="panel <?= $active_tab === 'register' ? 'active' : '' ?>" id="panel-register" method="post" action="register.php" novalidate>
         <?= csrf_field() ?>
         <div>
@@ -297,6 +268,24 @@ $flash = get_flash();
         </div>
         <div class="row-2">
           <div class="field">
+            <label for="regNationalId">National ID number</label>
+            <input type="text" id="regNationalId" name="national_id" placeholder="e.g. 12345678"
+                   inputmode="numeric" pattern="\d{6,10}" required
+                   value="<?= e($reg_old['national_id'] ?? '') ?>">
+          </div>
+          <div class="field">
+            <label for="regLocation">Location</label>
+            <input type="text" id="regLocation" name="location" placeholder="Town / County" required
+                   value="<?= e($reg_old['location'] ?? '') ?>">
+          </div>
+        </div>
+        <div class="field" id="businessNameField" style="display:none;">
+          <label for="regBusinessName">Farm / business name</label>
+          <input type="text" id="regBusinessName" name="business_name" placeholder="e.g. Green Valley Farm"
+                 value="<?= e($reg_old['business_name'] ?? '') ?>">
+        </div>
+        <div class="row-2">
+          <div class="field">
             <label for="regPassword">Password</label>
             <input type="password" id="regPassword" name="password" placeholder="Min. 6 characters" required>
           </div>
@@ -313,7 +302,6 @@ $flash = get_flash();
       </form>
 
 <script>
-  // Tab switching (Sign in / Create account)
   function showTab(name) {
     document.querySelectorAll('.tab').forEach(function (t) {
       t.classList.toggle('active', t.dataset.tab === name);
@@ -328,14 +316,23 @@ $flash = get_flash();
     b.addEventListener('click', function () { showTab(b.dataset.switch); });
   });
 
-  // Role stamp selector
+  function syncBusinessNameField() {
+    var role = document.getElementById('roleInput').value;
+    var field = document.getElementById('businessNameField');
+    var input = document.getElementById('regBusinessName');
+    var show = role === 'Farmer';
+    field.style.display = show ? 'block' : 'none';
+    input.required = show;
+  }
   document.querySelectorAll('.stamp').forEach(function (s) {
     s.addEventListener('click', function () {
       document.querySelectorAll('.stamp').forEach(function (o) { o.classList.remove('selected'); });
       s.classList.add('selected');
       document.getElementById('roleInput').value = s.dataset.role;
+      syncBusinessNameField();
     });
   });
+  syncBusinessNameField();
 </script>
 </body>
 </html>
