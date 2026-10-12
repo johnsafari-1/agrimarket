@@ -72,3 +72,17 @@ jobs:
         env:
           AGRIMARKET_TEST_DSN: mysql:host=127.0.0.1;port=${{ job.services.mysql.ports[3306] }};charset=utf8mb4
         run: php tests/http_smoke_test.php
+      - name: Check desktop and mobile UI interactions
+        run: |
+          npm install --prefix "$RUNNER_TEMP/agrimarket-ui" --no-audit --no-fund playwright@1.64.0
+          export NODE_PATH="$RUNNER_TEMP/agrimarket-ui/node_modules"
+          export CHROMIUM_EXECUTABLE="$(command -v google-chrome)"
+          php tests/render_ui_fixtures.php
+          node tests/ui_test.cjs
+      - name: Save UI screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-desktop-mobile
+          path: tests/ui-artifacts/*.png
+          if-no-files-found: ignore

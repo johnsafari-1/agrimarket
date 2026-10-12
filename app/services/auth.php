@@ -14,7 +14,10 @@ function auth_allow_attempt(PDO $pdo, string $scope, string $address, int $limit
     $key = hash('sha256', $scope . '|' . $address);
     $pdo->beginTransaction();
     try {
-        $pdo->prepare('INSERT IGNORE INTO auth_rate_limits (bucket_key, attempts, started_at) VALUES (?, 0, NOW())')->execute([$key]);
+        // ON DUPLICATE KEY takes an exclusive lock; INSERT IGNORE can leave
+        // competing requests holding shared locks and deadlock on conversion.
+        $pdo->prepare('INSERT INTO auth_rate_limits (bucket_key, attempts, started_at) VALUES (?, 0, NOW())
+            ON DUPLICATE KEY UPDATE bucket_key = VALUES(bucket_key)')->execute([$key]);
         $stmt = $pdo->prepare('SELECT attempts, started_at <= NOW() - INTERVAL 15 MINUTE AS expired FROM auth_rate_limits WHERE bucket_key = ? FOR UPDATE');
         $stmt->execute([$key]);
         $bucket = $stmt->fetch(PDO::FETCH_ASSOC);
