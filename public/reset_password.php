@@ -4,30 +4,19 @@ $page_title = 'Reset password';
 $errors = [];
 $done = false;
 
-$token = $_GET['token'] ?? $_POST['token'] ?? '';
-
-$stmt = $pdo->prepare(
-    "SELECT user_id FROM users
-     WHERE reset_token = ? AND reset_sent_at IS NOT NULL
-       AND reset_sent_at >= (NOW() - INTERVAL 1 HOUR)
-       AND reset_sent_at <= (NOW() + INTERVAL 5 MINUTE)"
-);
-$stmt->execute([$token]);
-$user = $stmt->fetch();
-$valid_token = (bool)$user;
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $valid_token) {
+$input = $_POST['token'] ?? $_GET['token'] ?? '';
+$token = is_string($input) ? $input : '';
+$valid_token = auth_valid_reset($pdo, $token);
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_csrf();
-    $password = $_POST['password'] ?? '';
-    $confirm  = $_POST['confirm'] ?? '';
-
-    if (strlen($password) < 6) $errors[] = 'Password must be at least 6 characters.';
+    $password = is_string($_POST['password'] ?? null) ? $_POST['password'] : '';
+    $confirm = is_string($_POST['confirm'] ?? null) ? $_POST['confirm'] : '';
+    if ($error = auth_password_error($password)) $errors[] = $error;
     if ($password !== $confirm) $errors[] = 'Passwords do not match.';
-
-    if (!$errors) {
-        $pdo->prepare('UPDATE users SET password_hash = ?, reset_token = NULL, failed_login_attempts = 0, locked_until = NULL WHERE user_id = ?')
-            ->execute([password_hash($password, PASSWORD_DEFAULT), $user['user_id']]);
-        $done = true;
+    if (!$errors && $valid_token) {
+        $done = auth_reset_password($pdo, $token, $password);
+        $valid_token = $done;
+        if ($done) { $_SESSION = []; session_regenerate_id(true); }
     }
 }
 
@@ -61,11 +50,11 @@ include ROOT_PATH . '/resources/views/layout/header.php';
             <input type="hidden" name="token" value="<?= e($token) ?>">
             <div class="mb-3">
               <label class="form-label">New password</label>
-              <input type="password" name="password" class="form-control" placeholder="Min. 6 characters" required>
+              <input type="password" name="password" autocomplete="new-password" minlength="15" maxlength="72" class="form-control" placeholder="At least 15 characters" required>
             </div>
             <div class="mb-3">
               <label class="form-label">Confirm new password</label>
-              <input type="password" name="confirm" class="form-control" placeholder="Repeat password" required>
+              <input type="password" name="confirm" autocomplete="new-password" minlength="15" maxlength="72" class="form-control" placeholder="Repeat password" required>
             </div>
             <button class="btn btn-success w-100">Update password</button>
           </form>

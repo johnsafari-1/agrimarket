@@ -25,3 +25,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Generated UI test snapshots and screenshots.
+tests/ui-artifacts/

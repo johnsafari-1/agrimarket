@@ -2,31 +2,8 @@
 require_once dirname(__DIR__) . '/app/bootstrap.php';
 $page_title = 'Verify your account';
 
-$token = $_GET['token'] ?? '';
-$outcome = null; // 'ok' | 'already' | 'expired' | 'invalid'
-
-if ($token !== '') {
-    $stmt = $pdo->prepare('SELECT user_id, is_verified, verification_sent_at FROM users WHERE verification_token = ?');
-    $stmt->execute([$token]);
-    $user = $stmt->fetch();
-
-    if (!$user) {
-        $outcome = 'invalid';
-    } elseif ($user['is_verified']) {
-        $outcome = 'already';
-    } else {
-        $sentAt = $user['verification_sent_at'] ? strtotime($user['verification_sent_at']) : 0;
-        if ($sentAt && (time() - $sentAt) > 24 * 3600) {
-            $outcome = 'expired';
-        } else {
-            $pdo->prepare('UPDATE users SET is_verified = 1, verification_token = NULL WHERE user_id = ?')
-                ->execute([$user['user_id']]);
-            $outcome = 'ok';
-        }
-    }
-} else {
-    $outcome = 'invalid';
-}
+$token = is_string($_GET['token'] ?? null) ? $_GET['token'] : '';
+$outcome = auth_verify_email($pdo, $token) ? 'ok' : 'invalid';
 
 include ROOT_PATH . '/resources/views/layout/header.php';
 ?>

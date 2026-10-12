@@ -5,8 +5,9 @@
 ```powershell
 Set-Location 'D:\xampp\htdocs\marketplace'
 git fetch origin
-git switch --track origin/refactor-project-structure
+git switch --track origin/feature-auth-ui-tracking
 & 'D:\xampp\php\php.exe' scripts/migrate-local.php
+& 'D:\xampp\php\php.exe' scripts/migrate.php
 ```
 
 The CLI setup script extracts literal `define()` settings from the old ignored
@@ -18,8 +19,12 @@ for review without applying SQL. No credentials are printed. Settings expressed
 as code rather than literals require manual migration using
 `config/local.example.php` as the new format.
 
-Keep your existing database. **Do not re-import `database/schema.sql`.** This
-refactor needs no schema migration where registration/password reset already work.
+Keep your existing database. **Do not re-import `database/schema.sql`.** The new
+authentication/tracking tables are added by `scripts/migrate.php`, which records
+applied migrations and is safe to run again. Run it with Apache stopped during
+the first upgrade, then restart Apache. Existing accounts and orders are preserved.
+Existing email links are invalidated once; request new verification/reset links.
+Existing browser sessions must sign in again after this upgrade.
 Historical scripts in `database/migrations/` are one-time upgrades; check missing
 columns before applying one. Your untracked KYC migration is not applied or replaced.
 
@@ -36,7 +41,8 @@ If rewrites are disabled, use **http://localhost/marketplace/public/** and updat
 2. Clone into `D:\xampp\htdocs\marketplace`.
 3. Copy `config/local.example.php` to `config/local.php`; fill in database, SMTP,
    `SITE_URL`, and optional M-Pesa settings.
-4. Start Apache/MySQL and import **database/schema.sql** in phpMyAdmin.
+4. Start MySQL and import **database/schema.sql** in phpMyAdmin. Run
+   `scripts/migrate.php` once before using the app, then start Apache.
 5. Open **http://localhost/marketplace/** with rewrite rules enabled.
 
 The fresh schema includes password-reset and registration profile fields. Demo
@@ -90,3 +96,16 @@ with the root rewrite rules. Callback logs are now private in `storage/logs/`.
 
 See [../tests/README.md](../tests/README.md). Integration tests use disposable
 databases. No test sends email or calls M-Pesa. Test settings are not production settings.
+
+
+## Open and work in VS Code
+
+```powershell
+Set-Location 'D:\xampp\htdocs\marketplace'
+code .
+```
+
+Authentication logic lives in `app/services/auth.php`; shared layout is under
+`resources/views/layout/`; sign-in UI is under `resources/views/auth/`; customer
+tracking is under `resources/views/orders/` and `app/services/tracking.php`. No
+Node build or Composer install is needed for this increment.

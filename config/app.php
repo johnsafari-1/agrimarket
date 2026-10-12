@@ -3,6 +3,9 @@
 return [
     'APP_NAME' => 'AgriMarket',
     'APP_TIMEZONE' => 'Africa/Nairobi',
+    'AUTH_IDLE_SECONDS' => 1800,
+    'AUTH_MAX_SECONDS' => 43200,
+    'SESSION_SECURE' => null, // null detects direct HTTPS; set true behind a trusted HTTPS proxy.
     'SITE_URL' => 'http://localhost/marketplace',
     'DB_HOST' => '127.0.0.1',
     'DB_PORT' => 3306,

@@ -27,12 +27,24 @@ foreach ($settings as $name => $value) {
     if (!defined($name)) define($name, $value);
 }
 date_default_timezone_set(APP_TIMEZONE);
-if (session_status() === PHP_SESSION_NONE) session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    ini_set('session.use_strict_mode', '1');
+    ini_set('session.use_only_cookies', '1');
+    $secure = SESSION_SECURE ?? (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+    session_set_cookie_params(['lifetime' => 0, 'path' => '/', 'secure' => $secure, 'httponly' => true, 'samesite' => 'Lax']);
+    session_start();
+}
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
+header('Referrer-Policy: no-referrer');
+header('Cache-Control: no-store');
 
 require_once APP_PATH . '/support/helpers.php';
+require_once APP_PATH . '/support/ui.php';
 require_once APP_PATH . '/services/Mpesa.php';
 require_once APP_PATH . '/services/payments.php';
 require_once APP_PATH . '/services/mailer.php';
+require_once APP_PATH . '/services/auth.php';
 
 try {
     $pdo = new PDO(
@@ -40,6 +52,7 @@ try {
         DB_USER, DB_PASS,
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]
     );
+    auth_refresh_session($pdo);
 } catch (PDOException $error) {
     error_log('Database connection failed: ' . $error->getMessage());
     http_response_code(503);

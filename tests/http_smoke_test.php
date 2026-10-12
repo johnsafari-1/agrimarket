@@ -32,7 +32,7 @@ function request_page(string $path, string $method = 'GET', array $data = []): a
         if (stripos($header, 'Location: ') === 0) $location = substr($header, 10);
     }
     ++$checks;
-    return ['status' => $status, 'body' => $body, 'location' => $location];
+    return ['status' => $status, 'body' => $body, 'location' => $location, 'headers' => $http_response_header];
 }
 function csrf(array $page): string {
     verify((bool)preg_match('/name="csrf_token" value="([^"]+)"/', $page['body'], $match), 'Missing CSRF field.');
@@ -67,6 +67,16 @@ try {
     file_put_contents($root . '/public/uploads/blocked.php', '<?php echo "must-not-run";');
     file_put_contents($root . '/public/uploads/blocked.php.jpg', '<?php echo "must-not-run";');
     file_put_contents($root . '/storage/logs/private-fixture.log', 'must-not-read');
+    $cmd = [PHP_BINARY];
+    if (php_ini_loaded_file()) array_push($cmd, '-c', php_ini_loaded_file());
+    array_push($cmd, $root . '/scripts/migrate.php');
+    foreach ([1, 2] as $run) {
+        $process = proc_open($cmd, [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+        fclose($pipes[0]); $output = stream_get_contents($pipes[1]); $error = stream_get_contents($pipes[2]);
+        fclose($pipes[1]); fclose($pipes[2]);
+        verify(proc_close($process) === 0, 'Migration runner failed: ' . $error);
+        verify(str_contains($output, $run === 1 ? 'Applied:' : 'Already applied:'), 'Migration is not repeat-safe.');
+    }
 
     $page = request_page('/');
     verify($page['status'] === 200 && str_contains($page['body'], 'Fresh Maize'), 'Root rewrite or fresh schema failed.');
@@ -79,11 +89,12 @@ try {
         verify(request_page($path)['status'] === 403, 'Private resource exposed: ' . $path);
     }
     verify(request_page('/farmer_dashboard.php')['status'] === 302, 'Guest accessed farmer dashboard.');
+    verify(request_page('/order_tracking.php?id=1')['status'] === 401, 'Guest read tracking data.');
 
     $register = request_page('/login.php?tab=register');
     $response = request_page('/register.php', 'POST', ['csrf_token' => csrf($register), 'full_name' => 'Fresh Buyer',
         'email' => 'fresh@example.test', 'phone' => '0700000010', 'role' => 'Buyer',
-        'password' => 'test-password', 'confirm' => 'test-password', 'national_id' => '99999999', 'location' => 'Nakuru']);
+        'password' => 'test-password-phrase', 'confirm' => 'test-password-phrase', 'national_id' => '99999999', 'location' => 'Nakuru']);
     verify($response['status'] === 302 && $response['location'] === 'login.php', 'Registration failed.');
     verify((int)$pdo->query("SELECT COUNT(*) FROM users WHERE email='fresh@example.test' AND national_id='99999999'")->fetchColumn() === 1, 'Profile fields unavailable on fresh install.');
 
@@ -92,6 +103,9 @@ try {
         verify(request_page($path)['status'] === 200, 'Buyer page failed: ' . $path);
     }
     verify(request_page('/admin_dashboard.php')['status'] === 302, 'Buyer accessed admin dashboard.');
+    verify(request_page('/logout.php')['status'] === 405, 'GET signed the user out.');
+    verify(request_page('/logout.php', 'POST')['status'] === 403, 'Logout skipped CSRF.');
+    verify(request_page('/logout.php', 'POST', ['csrf_token' => ['bad-token']])['status'] === 403, 'Malformed CSRF was not rejected.');
     $cart = request_page('/product.php?id=1');
     verify(request_page('/cart.php', 'POST', ['csrf_token' => csrf($cart), 'action' => 'add', 'product_id' => 1, 'quantity' => 2])['status'] === 302, 'Cart add failed.');
     $checkout = request_page('/checkout.php');
@@ -99,10 +113,19 @@ try {
     verify($placed['status'] === 302 && str_starts_with($placed['location'], 'order.php?id='), 'Checkout failed.');
     $order = request_page('/' . $placed['location']);
     verify($order['status'] === 200, 'Order details failed.');
+    $orderId = (int)substr($placed['location'], strlen('order.php?id='));
+    $tracking = request_page('/order_tracking.php?id=' . $orderId);
+    $snapshot = json_decode($tracking['body'], true);
+    verify($tracking['status'] === 200 && $snapshot['status'] === 'Pending' && count($snapshot['events']) === 1, 'Placement missing from tracking.');
     verify(request_page('/' . $placed['location'], 'POST', ['csrf_token' => csrf($order), 'action' => 'cancel'])['status'] === 302, 'Cancellation failed.');
     verify((int)$pdo->query('SELECT quantity FROM products WHERE product_id=1')->fetchColumn() === 500, 'Cancellation did not restore stock.');
+    $snapshot = json_decode(request_page('/order_tracking.php?id=' . $orderId)['body'], true);
+    verify($snapshot['status'] === 'Cancelled' && array_column($snapshot['events'], 'status') === ['Pending', 'Cancelled'], 'Cancellation history missing.');
+    sign_in('grace@buyer.co.ke', 'index.php');
+    verify(request_page('/order_tracking.php?id=' . $orderId)['status'] === 404, 'Another buyer read the order.');
 
     sign_in('john@farmer.co.ke', 'farmer_dashboard.php');
+    verify(request_page('/order_tracking.php?id=' . $orderId)['status'] === 403, 'Customer API exposed to farmer.');
     foreach (['/farmer_dashboard.php', '/farmer_products.php', '/farmer_product_form.php', '/farmer_orders.php', '/farmer_requests.php'] as $path) {
         verify(request_page($path)['status'] === 200, 'Farmer page failed: ' . $path);
     }
@@ -110,6 +133,18 @@ try {
     foreach (['/admin_dashboard.php', '/admin_users.php', '/admin_products.php', '/admin_orders.php', '/admin_report.php'] as $path) {
         verify(request_page($path)['status'] === 200, 'Admin page failed: ' . $path);
     }
+    // Deactivation and password changes take effect on the next authenticated request.
+    sign_in('peter@buyer.co.ke', 'index.php');
+    $pdo->exec('UPDATE users SET is_active=0 WHERE user_id=4');
+    verify(request_page('/my_orders.php')['status'] === 302, 'Deactivated session remained active.');
+    $pdo->exec('UPDATE users SET is_active=1 WHERE user_id=4');
+    sign_in('peter@buyer.co.ke', 'index.php');
+    $pdo->prepare('UPDATE users SET password_hash=? WHERE user_id=4')->execute([password_hash('new secure passphrase', PASSWORD_DEFAULT)]);
+    verify(request_page('/order_tracking.php?id=' . $orderId)['status'] === 401, 'Session survived password change.');
+    sign_in('grace@buyer.co.ke', 'index.php');
+    $logoutForm = request_page('/my_orders.php');
+    verify(request_page('/logout.php', 'POST', ['csrf_token' => csrf($logoutForm)])['status'] === 302, 'Valid logout failed.');
+    verify(request_page('/order_tracking.php?id=' . $orderId)['status'] === 401, 'Logout left tracking session active.');
     echo "PASS $checks HTTP checks: legacy URLs, assets, private files, roles, fresh registration, checkout and cancellation.\n";
 } finally {
     if ($localCreated) unlink($localPath);
