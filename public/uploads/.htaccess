@@ -1,0 +1,7 @@
+Options -Indexes
+<FilesMatch "(?i)\.(?:php[0-9]*|phtml|phar)(?:\.|$)">
+    Require all denied
+</FilesMatch>
+<FilesMatch "(?i)^(?!.*\.(?:jpe?g|png|gif|webp)$).*$">
+    Require all denied
+</FilesMatch>
