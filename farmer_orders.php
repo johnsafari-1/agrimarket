@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/order_transitions.php';
 require_login('Farmer');
 $page_title = 'Manage Orders';
 $fid = current_user_id();
@@ -16,47 +17,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $oid = (int)($_POST['order_id'] ?? 0);
     $new = $_POST['new_status'] ?? '';
 
-    $chk = $pdo->prepare(
-        'SELECT o.status FROM orders o
-         JOIN order_items i ON i.order_id = o.order_id
-         JOIN products p ON p.product_id = i.product_id
-         WHERE o.order_id = ? AND p.farmer_id = ? LIMIT 1'
-    );
-    $chk->execute([$oid, $fid]);
-    $row = $chk->fetch();
-
-    if ($row && in_array($new, $allowed_transitions[$row['status']] ?? [], true)) {
-        if ($new === 'Confirmed') {
-            $est_date   = trim($_POST['estimated_delivery_date'] ?? '');
-            $est_window = $_POST['estimated_delivery_window'] ?? '';
-            $valid_date = $est_date !== '' && strtotime($est_date) !== false && $est_date >= date('Y-m-d');
-            $valid_win  = in_array($est_window, ['Morning', 'Afternoon', 'Evening'], true);
-            if (!$valid_date || !$valid_win) {
-                set_flash('danger', 'Give a valid expected delivery date (today or later) and time window before confirming.');
-                header('Location: farmer_orders.php');
-                exit;
-            }
-            $pdo->prepare('UPDATE orders SET status = ?, estimated_delivery_date = ?, estimated_delivery_window = ? WHERE order_id = ?')
-                ->execute([$new, $est_date, $est_window, $oid]);
-        } else {
-            $pdo->prepare('UPDATE orders SET status = ? WHERE order_id = ?')->execute([$new, $oid]);
-        }
-        if ($new === 'Delivered') {
-            $pdo->prepare(
-                "UPDATE transactions SET payment_status = 'Completed', paid_at = NOW()
-                 WHERE order_id = ? AND payment_status = 'Pending'"
-            )->execute([$oid]);
-        }
-        if ($new === 'Cancelled') {
-            // Return stock for all items in the order
-            $items = $pdo->prepare('SELECT product_id, quantity FROM order_items WHERE order_id = ?');
-            $items->execute([$oid]);
-            $restock = $pdo->prepare('UPDATE products SET quantity = quantity + ? WHERE product_id = ?');
-            foreach ($items->fetchAll() as $it) $restock->execute([(int)$it['quantity'], (int)$it['product_id']]);
-        }
-        set_flash('success', "Order #$oid marked as $new.");
-    } else {
-        set_flash('danger', 'Invalid status change.');
+    try {
+        $changed = transition_order(
+            $pdo, $oid, (int)$fid, 'Farmer', $_POST['expected_status'] ?? '', $new,
+            trim($_POST['estimated_delivery_date'] ?? ''), $_POST['estimated_delivery_window'] ?? ''
+        );
+        set_flash($changed ? 'success' : 'warning', $changed
+            ? "Order #$oid marked as $new."
+            : 'The order could not be updated. Its status may have changed; review the latest details.');
+    } catch (InvalidArgumentException $error) {
+        set_flash('danger', $error->getMessage());
+    } catch (Throwable $error) {
+        error_log('Order status update failed: ' . $error->getMessage());
+        set_flash('danger', 'The order could not be updated. Please try again.');
     }
     header('Location: farmer_orders.php');
     exit;
@@ -113,6 +86,7 @@ include __DIR__ . '/header.php';
                 <form method="post" class="d-flex gap-1 align-items-start flex-wrap order-status-form">
                   <?= csrf_field() ?>
                   <input type="hidden" name="order_id" value="<?= (int)$o['order_id'] ?>">
+                  <input type="hidden" name="expected_status" value="<?= e($o['status']) ?>">
                   <select name="new_status" class="form-select form-select-sm status-select" style="width:auto;">
                     <?php foreach ($next as $n): ?>
                       <option value="<?= e($n) ?>"><?= e($n) ?></option>

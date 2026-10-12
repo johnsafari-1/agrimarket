@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/order_transitions.php';
 require_login();
 $page_title = 'Order Details';
 
@@ -37,14 +38,18 @@ if (!$is_owner && !$is_seller && current_role() !== 'Admin') {
 }
 
 // Buyer may cancel while order is still Pending.
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'cancel'
-    && $is_owner && $order['status'] === 'Pending') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'cancel') {
     require_csrf();
-    $pdo->prepare("UPDATE orders SET status = 'Cancelled' WHERE order_id = ?")->execute([$id]);
-    // Return reserved stock
-    $restock = $pdo->prepare('UPDATE products SET quantity = quantity + ? WHERE product_id = ?');
-    foreach ($items as $it) $restock->execute([(int)$it['quantity'], (int)$it['product_id']]);
-    set_flash('info', 'Order cancelled and stock returned to the farmer.');
+    try {
+        $changed = current_role() === 'Buyer'
+            && transition_order($pdo, $id, (int)current_user_id(), 'Buyer', 'Pending', 'Cancelled');
+        set_flash($changed ? 'info' : 'warning', $changed
+            ? 'Order cancelled and stock returned to the farmer.'
+            : 'This order cannot be cancelled. Its status may have changed; review the latest details.');
+    } catch (Throwable $error) {
+        error_log('Order cancellation failed: ' . $error->getMessage());
+        set_flash('danger', 'The order could not be cancelled. Please try again.');
+    }
     header('Location: order.php?id=' . $id);
     exit;
 }

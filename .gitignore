@@ -1,6 +1,9 @@
 # Real credentials — never commit this. Use config.sample.php as the template.
 config.php
 
+# Local source/configuration backups may contain credentials.
+*.OLD_BACKUP
+
 # User-uploaded product images (keep the folder, ignore its contents)
 uploads/*
 !uploads/.gitkeep

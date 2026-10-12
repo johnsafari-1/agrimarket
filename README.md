@@ -45,9 +45,14 @@ Shared layout: `header.php`, `footer.php`. Product images are saved to `uploads/
 
 Pending → Confirmed → Shipped → Delivered (farmer updates status in `farmer_orders.php`).
 A buyer can cancel while an order is still Pending; cancelling returns stock to the farmer.
-Marking Delivered sets the linked transaction to Completed. Paying by M-Pesa moves an order to
+Marking Delivered completes a pending Cash on Delivery transaction. M-Pesa and Card payments
+remain pending until payment is independently confirmed. Paying by M-Pesa moves an order to
 Confirmed automatically as soon as the payment is verified (see below); Cash on Delivery and Card
 stay Pending until the farmer confirms.
+
+Order status changes and cancellation/restocking run in one database transaction.
+Duplicate cancellations return stock once, and stale farmer forms are rejected after
+checking the latest order status. See `tests/README.md` for integration tests.
 
 ## Product requests ("I need...")
 

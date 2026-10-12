@@ -1,0 +1,39 @@
+name: Order transitions
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: agrimarket_test_password
+          MYSQL_ROOT_HOST: '%'
+        ports:
+          - 3306/tcp
+        options: >-
+          --health-cmd="mysqladmin ping --silent -h 127.0.0.1 -pagrimarket_test_password"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check PHP runtime and syntax
+        run: |
+          php --version
+          php --ri pdo_mysql
+          find . -name '*.php' -not -path './PHPMailer/*' -print0 | xargs -0 -n1 php -l
+      - name: Run order transition integration tests
+        env:
+          AGRIMARKET_TEST_DSN: mysql:host=127.0.0.1;port=${{ job.services.mysql.ports[3306] }};charset=utf8mb4
+          AGRIMARKET_TEST_USER: root
+          AGRIMARKET_TEST_PASS: agrimarket_test_password
+        run: php tests/order_transitions_test.php
