@@ -1,6 +1,6 @@
 <?php
 /** Integration tests against a disposable database; never reads config.php. */
-require_once __DIR__ . '/../order_transitions.php';
+require_once __DIR__ . '/../app/services/order_transitions.php';
 
 $dsn = getenv('AGRIMARKET_TEST_DSN') ?: 'mysql:host=127.0.0.1;port=3306;charset=utf8mb4';
 $user = getenv('AGRIMARKET_TEST_USER') ?: 'root';
@@ -86,7 +86,7 @@ try {
     $pdo->exec('CREATE DATABASE `' . $database . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
     $created = true;
     $pdo->exec('USE `' . $database . '`');
-    $schema = file_get_contents(__DIR__ . '/../database.sql');
+    $schema = file_get_contents(__DIR__ . '/../database/schema.sql');
     $schema = preg_replace('/^CREATE DATABASE.*;\s*$/m', '', $schema);
     $schema = preg_replace('/^USE farmer_marketplace;\s*$/m', '', $schema);
     $schema = substr($schema, 0, strpos($schema, '-- SEED DATA'));
