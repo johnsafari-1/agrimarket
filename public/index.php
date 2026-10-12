@@ -36,17 +36,14 @@ $products = $stmt->fetchAll();
 
 include ROOT_PATH . '/resources/views/layout/header.php';
 ?>
-<div class="p-4 mb-4 rounded-3" style="background: linear-gradient(120deg,#1B2416,#263320); color:#F3EEE0;">
-  <h2 class="fw-bold" style="color:#F3EEE0;">Agricultural Marketplace</h2>
-  <p class="mb-0" style="color:#EAE2CC;">Order maize, milk, vegetables and more straight from the farmers who grow them.</p>
-</div>
+<section class="hero-market"><div class="hero-copy"><span class="eyebrow">LOCAL HARVEST. DIRECT CONNECTIONS.</span><h1>Fresh from the farm.<br>Closer to your table.</h1><p>Discover produce from local farmers. Shop in KES, connect directly and follow your order from confirmation to delivery.</p></div><div class="hero-photo" role="img" aria-label="Local agricultural produce"></div></section>
 
 <form class="row g-2 mb-4" method="get">
   <div class="col-md-5">
-    <input type="text" name="q" class="form-control" placeholder="Search products..." value="<?= e($search) ?>">
+    <input type="text" name="q" aria-label="Search products" class="form-control" placeholder="Search products..." value="<?= e($search) ?>">
   </div>
   <div class="col-md-3">
-    <select name="category" class="form-select">
+    <select name="category" aria-label="Product category" class="form-select">
       <option value="">All categories</option>
       <?php foreach ($categories as $c): ?>
         <option value="<?= e($c) ?>" <?= $category === $c ? 'selected' : '' ?>><?= e($c) ?></option>
@@ -54,7 +51,7 @@ include ROOT_PATH . '/resources/views/layout/header.php';
     </select>
   </div>
   <div class="col-md-2">
-    <select name="sort" class="form-select">
+    <select name="sort" aria-label="Sort products" class="form-select">
       <option value="newest"     <?= $sort === 'newest' ? 'selected' : '' ?>>Newest first</option>
       <option value="price_asc"  <?= $sort === 'price_asc' ? 'selected' : '' ?>>Price: low to high</option>
       <option value="price_desc" <?= $sort === 'price_desc' ? 'selected' : '' ?>>Price: high to low</option>

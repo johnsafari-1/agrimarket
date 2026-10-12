@@ -1,6 +1,7 @@
 <?php
 require_once dirname(__DIR__) . '/app/bootstrap.php';
 require_login('Buyer');
+require_once APP_PATH . '/services/tracking.php';
 $page_title = 'Checkout';
 
 $cart = $_SESSION['cart'] ?? [];
@@ -56,6 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
             $stmt->execute([current_user_id(), $total, $address]);
             $order_id = (int)$pdo->lastInsertId();
+            record_order_event($pdo, $order_id, 'Pending', (int)current_user_id(), 'Order placed.');
 
             // 2. Create order items + decrement stock
             $item_stmt  = $pdo->prepare(

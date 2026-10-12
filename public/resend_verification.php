@@ -6,27 +6,21 @@ $sent_message = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_csrf();
-    $email = trim($_POST['email'] ?? '');
-
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    $email = auth_email($_POST['email'] ?? '');
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 150) {
         $errors[] = 'Enter a valid email address.';
     } else {
-        $stmt = $pdo->prepare('SELECT user_id, full_name, is_verified, verification_sent_at FROM users WHERE email = ?');
-        $stmt->execute([$email]);
-        $user = $stmt->fetch();
-
-        // Same generic message whether or not the account exists / is already verified,
-        // so this can't be used to check which emails are registered.
-        $sent_message = "If that email has a pending account, we've sent a fresh verification link.";
-
-        if ($user && !$user['is_verified']) {
-            $lastSent = $user['verification_sent_at'] ? strtotime($user['verification_sent_at']) : 0;
-            if (time() - $lastSent >= 60) { // simple cooldown so this can't be used to spam an inbox
-                $token = bin2hex(random_bytes(32));
-                $pdo->prepare('UPDATE users SET verification_token = ?, verification_sent_at = NOW() WHERE user_id = ?')
-                    ->execute([$token, $user['user_id']]);
-                send_verification_email($email, $user['full_name'], $token);
+        $sent_message = 'If this account is eligible, a new link will be sent. Check your inbox or try again later.';
+        try {
+            if (auth_allow_attempt($pdo, 'verification', $_SERVER['REMOTE_ADDR'] ?? 'unknown', 5)) {
+                $message = auth_issue_token($pdo, $email, 'verification');
+                if ($message) send_verification_email($message['email'], $message['name'], $message['token']);
             }
+        } catch (Throwable $error) {
+            error_log('Account recovery unavailable: ' . $error->getMessage());
+            http_response_code(503);
+            $sent_message = null;
+            $errors[] = 'This service is temporarily unavailable. Please try again later.';
         }
     }
 }

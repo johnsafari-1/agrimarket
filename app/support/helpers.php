@@ -72,7 +72,7 @@ function csrf_field() {
 function require_csrf() {
     $sent     = $_POST['csrf_token'] ?? '';
     $expected = $_SESSION['csrf_token'] ?? '';
-    if ($expected === '' || $sent === '' || !hash_equals($expected, $sent)) {
+    if (!is_string($expected) || !is_string($sent) || $expected === '' || $sent === '' || !hash_equals($expected, $sent)) {
         http_response_code(403);
         die('Your session expired or this request could not be verified. Please go back, refresh the page, and try again.');
     }

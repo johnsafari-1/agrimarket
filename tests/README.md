@@ -30,3 +30,17 @@ Run the configuration/upload migration tests without a database:
 original `/marketplace/` URLs, login, role protection, registration and blocked
 access to private settings/SQL/logs. GitHub Actions runs all checks. Tests do not
 send email or call M-Pesa.
+
+
+Authentication integration tests use the same disposable MySQL connection:
+
+```powershell
+& 'D:\xampp\php\php.exe' tests/auth_test.php
+```
+
+They cover registration validation, token digests/expiry/replay, concurrent login
+lockouts and reset requests, rate limits, permission refresh and session revocation.
+Order tests also cover atomic tracking history and duplicate provider results.
+HTTP tests include the repeat-safe migration runner, CSRF logout and owner-only
+tracking. All tests use temporary databases and dummy settings, never real email
+or provider calls.

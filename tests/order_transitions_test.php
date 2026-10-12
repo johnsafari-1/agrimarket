@@ -1,6 +1,7 @@
 <?php
 /** Integration tests against a disposable database; never reads config.php. */
 require_once __DIR__ . '/../app/services/order_transitions.php';
+require_once __DIR__ . '/../app/services/payments.php';
 
 $dsn = getenv('AGRIMARKET_TEST_DSN') ?: 'mysql:host=127.0.0.1;port=3306;charset=utf8mb4';
 $user = getenv('AGRIMARKET_TEST_USER') ?: 'root';
@@ -237,6 +238,33 @@ try {
         check(status($pdo) === 'Cancelled', 'Cancelled status overwritten.');
     });
 
+    test_case('tracking failure rolls back delivery and payment', function () use ($pdo) {
+        fixture($pdo, 'Shipped');
+        $pdo->exec("INSERT INTO transactions (order_id, amount, payment_method) VALUES (1, 70, 'Cash on Delivery')");
+        $pdo->exec("CREATE TRIGGER fail_event BEFORE INSERT ON order_events FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Test failure'");
+        try {
+            try {
+                transition_order($pdo, 1, 2, 'Farmer', 'Shipped', 'Delivered');
+                throw new RuntimeException('Tracking failure swallowed.');
+            } catch (PDOException $expected) {
+                check(status($pdo) === 'Shipped', 'Delivery committed without history.');
+                check($pdo->query('SELECT payment_status FROM transactions')->fetchColumn() === 'Pending', 'Payment committed without history.');
+            }
+        } finally { $pdo->exec('DROP TRIGGER fail_event'); }
+    });
+    test_case('provider result records confirmation once and preserves cancellation', function () use ($pdo) {
+        fixture($pdo);
+        $pdo->exec("INSERT INTO transactions (order_id, amount, payment_method, checkout_request_id) VALUES (1, 70, 'M-Pesa', 'test-checkout')");
+        apply_mpesa_result($pdo, 'test-checkout', true, 'Confirmed', 'test-receipt');
+        apply_mpesa_result($pdo, 'test-checkout', false, 'Late failure', null);
+        check(status($pdo) === 'Confirmed', 'Payment did not confirm order.');
+        check((int)$pdo->query('SELECT COUNT(*) FROM order_events')->fetchColumn() === 1, 'Payment history duplicated.');
+        check($pdo->query('SELECT payment_status FROM transactions')->fetchColumn() === 'Completed', 'Late result reverted payment.');
+        fixture($pdo, 'Cancelled');
+        $pdo->exec("INSERT INTO transactions (order_id, amount, payment_method, checkout_request_id) VALUES (1, 70, 'M-Pesa', 'cancelled-checkout')");
+        apply_mpesa_result($pdo, 'cancelled-checkout', true, 'Confirmed', null);
+        check(status($pdo) === 'Cancelled' && (int)$pdo->query('SELECT COUNT(*) FROM order_events')->fetchColumn() === 0, 'Late payment revived cancellation.');
+    });
     echo "$tests tests passed.\n";
 } finally {
     if ($pdo->inTransaction()) $pdo->rollBack();

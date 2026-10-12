@@ -20,7 +20,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $changed = transition_order(
             $pdo, $oid, (int)$fid, 'Farmer', $_POST['expected_status'] ?? '', $new,
-            trim($_POST['estimated_delivery_date'] ?? ''), $_POST['estimated_delivery_window'] ?? ''
+            trim($_POST['estimated_delivery_date'] ?? ''), $_POST['estimated_delivery_window'] ?? '',
+            is_string($_POST['delivery_note'] ?? null) ? $_POST['delivery_note'] : ''
         );
         set_flash($changed ? 'success' : 'warning', $changed
             ? "Order #$oid marked as $new."
@@ -87,6 +88,7 @@ include ROOT_PATH . '/resources/views/layout/header.php';
                   <?= csrf_field() ?>
                   <input type="hidden" name="order_id" value="<?= (int)$o['order_id'] ?>">
                   <input type="hidden" name="expected_status" value="<?= e($o['status']) ?>">
+                  <input type="text" name="delivery_note" maxlength="500" class="form-control form-control-sm" placeholder="Delivery update (optional)" aria-label="Delivery update for order <?= (int)$o['order_id'] ?>">
                   <select name="new_status" class="form-select form-select-sm status-select" style="width:auto;">
                     <?php foreach ($next as $n): ?>
                       <option value="<?= e($n) ?>"><?= e($n) ?></option>

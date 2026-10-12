@@ -145,6 +145,26 @@ CREATE TABLE messages (
     CONSTRAINT fk_msg_receiver FOREIGN KEY (receiver_id) REFERENCES users(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS auth_rate_limits (
+    bucket_key CHAR(64) PRIMARY KEY,
+    attempts INT UNSIGNED NOT NULL DEFAULT 0,
+    started_at DATETIME NOT NULL,
+    INDEX idx_auth_rate_started (started_at)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS order_events (
+    event_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    status ENUM('Pending','Confirmed','Shipped','Delivered','Cancelled') NOT NULL,
+    actor_id INT NULL,
+    note VARCHAR(500) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_order_events_order (order_id, event_id),
+    CONSTRAINT fk_event_order FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+    CONSTRAINT fk_event_actor FOREIGN KEY (actor_id) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+
 -- =====================================================================
 -- SEED DATA  (all passwords are: password123)
 -- Hash generated with PHP password_hash('password123', PASSWORD_DEFAULT)

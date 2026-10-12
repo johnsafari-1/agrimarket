@@ -46,6 +46,7 @@ For deployment, set the document root to `public/`.
 
 Orders progress **Pending → Confirmed → Shipped → Delivered**. Cancellation
 updates status/restocking atomically; duplicate and stale changes are rejected.
+Customers can follow timestamped delivery updates and expected delivery windows.
 Delivery completes pending Cash on Delivery transactions only. Online payments
 are handled independently. Per-farmer fulfilment of mixed-farmer orders remains
 future work. Card selection records a method; no card provider is integrated.

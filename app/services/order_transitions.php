@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/tracking.php';
 /**
  * Change an order and its stock/payment records in one transaction.
  * The order row is locked before checking permissions and the expected status,
@@ -12,7 +13,8 @@ function transition_order(
     string $expectedStatus,
     string $newStatus,
     ?string $deliveryDate = null,
-    ?string $deliveryWindow = null
+    ?string $deliveryWindow = null,
+    string $note = ''
 ): bool {
     if ($pdo->inTransaction()) {
         throw new LogicException('Order transitions must own their database transaction.');
@@ -50,6 +52,8 @@ function transition_order(
             $pdo->rollBack();
             return false;
         }
+        $note = trim($note);
+        if (mb_strlen($note) > 500) throw new InvalidArgumentException('Keep delivery updates under 500 characters.');
 
         if ($newStatus === 'Confirmed') {
             $date = DateTimeImmutable::createFromFormat('!Y-m-d', $deliveryDate ?? '');
@@ -83,6 +87,9 @@ function transition_order(
             )->execute([$orderId]);
         }
 
+        $messages = ['Confirmed' => 'Farmer confirmed the order.', 'Shipped' => 'Order dispatched for delivery.',
+            'Delivered' => 'Order delivered.', 'Cancelled' => 'Order cancelled.'];
+        record_order_event($pdo, $orderId, $newStatus, $actorId, $note !== '' ? $note : $messages[$newStatus]);
         $pdo->commit();
         return true;
     } catch (Throwable $error) {
