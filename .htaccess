@@ -1,0 +1,15 @@
+# XAMPP compatibility: expose public/ while retaining /marketplace/*.php URLs.
+# For deployment, set DocumentRoot to public/ instead (see docs/SETUP.md).
+Options -Indexes
+RewriteEngine On
+
+# Direct /public/ requests are handled by its own directory rules.
+RewriteRule ^public(?:/|$) - [L]
+RewriteRule ^$ public/index.php [L]
+RewriteRule ^((?:assets|uploads)/.*)$ public/$1 [L]
+RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} !-d
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([a-z_]+\.php)$ public/$1 [L]
+
+# All other project files/directories, including old config/backups, are private.
+RewriteRule ^ - [F,L]

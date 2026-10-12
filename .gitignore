@@ -1,9 +1,20 @@
 # Real credentials — never commit this. Use config.sample.php as the template.
 config.php
+config/local.php
+
+# Local source/configuration backups may contain credentials.
+*.OLD_BACKUP
 
 # User-uploaded product images (keep the folder, ignore its contents)
 uploads/*
 !uploads/.gitkeep
+public/uploads/*
+!public/uploads/.gitkeep
+!public/uploads/.htaccess
+
+# Private runtime data.
+storage/logs/*
+!storage/logs/.gitkeep
 
 # OS / editor junk
 .DS_Store
