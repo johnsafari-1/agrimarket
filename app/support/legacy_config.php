@@ -53,11 +53,14 @@ function migrate_local_files(string $root): array {
         }
         $handle = fopen($destination, 'x');
         if (!$handle) throw new RuntimeException('Could not create config/local.php.');
+        $written = false;
         try {
             $content = "<?php\n// Local credentials. This file is ignored by Git.\nreturn " . var_export(array_replace($defaults, $settings), true) . ";\n";
             if (fwrite($handle, $content) !== strlen($content)) throw new RuntimeException('Could not finish writing local settings.');
+            $written = true;
         } finally {
             fclose($handle);
+            if (!$written) unlink($destination);
         }
         chmod($destination, 0600);
         $messages[] = 'Created config/local.php. No setting values were printed.';
@@ -78,7 +81,15 @@ function migrate_local_files(string $root): array {
     }
     $messages[] = "Copied $copied local image(s) to public/uploads. Original files kept.";
     if (is_file($root . '/migration_kyc_fields.sql')) {
-        $messages[] = 'Local migration_kyc_fields.sql kept at the root. Review it before applying any schema changes.';
+        $target = $root . '/database/migrations/migration_kyc_fields.sql';
+        if (is_file($target)) {
+            if (hash_file('sha256', $root . '/migration_kyc_fields.sql') !== hash_file('sha256', $target)) {
+                throw new RuntimeException('The local KYC migration conflicts with its destination; no file was replaced.');
+            }
+        } elseif (!copy($root . '/migration_kyc_fields.sql', $target)) {
+            throw new RuntimeException('Could not copy the local KYC migration.');
+        }
+        $messages[] = 'Local KYC migration copied to database/migrations for review. Original kept; no SQL applied.';
     }
     return $messages;
 }

@@ -65,6 +65,7 @@ try {
     $localCreated = true;
     chmod($localPath, 0644); // Dummy CI settings readable by Apache.
     file_put_contents($root . '/public/uploads/blocked.php', '<?php echo "must-not-run";');
+    file_put_contents($root . '/public/uploads/blocked.php.jpg', '<?php echo "must-not-run";');
     file_put_contents($root . '/storage/logs/private-fixture.log', 'must-not-read');
 
     $page = request_page('/');
@@ -74,7 +75,7 @@ try {
     }
     foreach (['/config/local.php', '/config/app.php', '/app/bootstrap.php', '/database/schema.sql', '/storage/logs/private-fixture.log',
         '/scripts/migrate-local.php', '/tests/http_smoke_test.php', '/lib/PHPMailer/src/SMTP.php', '/.git/config', '/config.php.OLD_BACKUP',
-        '/uploads/blocked.php', '/public/uploads/blocked.php'] as $path) {
+        '/uploads/blocked.php', '/public/uploads/blocked.php', '/uploads/blocked.php.jpg'] as $path) {
         verify(request_page($path)['status'] === 403, 'Private resource exposed: ' . $path);
     }
     verify(request_page('/farmer_dashboard.php')['status'] === 302, 'Guest accessed farmer dashboard.');
@@ -91,7 +92,7 @@ try {
         verify(request_page($path)['status'] === 200, 'Buyer page failed: ' . $path);
     }
     verify(request_page('/admin_dashboard.php')['status'] === 302, 'Buyer accessed admin dashboard.');
-    $cart = request_page('/cart.php');
+    $cart = request_page('/product.php?id=1');
     verify(request_page('/cart.php', 'POST', ['csrf_token' => csrf($cart), 'action' => 'add', 'product_id' => 1, 'quantity' => 2])['status'] === 302, 'Cart add failed.');
     $checkout = request_page('/checkout.php');
     $placed = request_page('/checkout.php', 'POST', ['csrf_token' => csrf($checkout), 'delivery_address' => 'Test Nakuru', 'payment_method' => 'Cash on Delivery']);
@@ -112,7 +113,7 @@ try {
     echo "PASS $checks HTTP checks: legacy URLs, assets, private files, roles, fresh registration, checkout and cancellation.\n";
 } finally {
     if ($localCreated) unlink($localPath);
-    foreach (['/public/uploads/blocked.php', '/storage/logs/private-fixture.log'] as $path) {
+    foreach (['/public/uploads/blocked.php', '/public/uploads/blocked.php.jpg', '/storage/logs/private-fixture.log'] as $path) {
         if (is_file($root . $path)) unlink($root . $path);
     }
     if ($created) $pdo->exec('DROP DATABASE `' . $database . '`');

@@ -24,17 +24,19 @@ try {
 }
 $root = sys_get_temp_dir() . '/agrimarket_setup_' . bin2hex(random_bytes(5));
 try {
-    foreach (['config', 'uploads', 'public/uploads'] as $directory) mkdir($root . '/' . $directory, 0700, true);
+    foreach (['config', 'uploads', 'public/uploads', 'database/migrations'] as $directory) mkdir($root . '/' . $directory, 0700, true);
     copy(dirname(__DIR__) . '/config/app.php', $root . '/config/app.php');
     file_put_contents($root . '/config.php', $source);
     file_put_contents($root . '/uploads/product.jpg', 'fixture image');
     file_put_contents($root . '/uploads/unsafe.php', '<?php echo "unsafe";');
+    file_put_contents($root . '/migration_kyc_fields.sql', '-- local KYC fixture');
     migrate_local_files($root);
     $local = require $root . '/config/local.php';
     expect($local['DB_PASS'] === "a'b\\c" && $local['SMTP_PASS'] === "line\nquote\"test", 'Migrated credentials changed.');
     expect(file_get_contents($root . '/public/uploads/product.jpg') === 'fixture image', 'Image not copied.');
     expect(!file_exists($root . '/public/uploads/unsafe.php'), 'Script copied into public uploads.');
     expect(file_exists($root . '/uploads/product.jpg'), 'Original image removed.');
+    expect(file_get_contents($root . '/database/migrations/migration_kyc_fields.sql') === '-- local KYC fixture', 'KYC migration not preserved.');
     $before = file_get_contents($root . '/config/local.php');
     migrate_local_files($root);
     expect(file_get_contents($root . '/config/local.php') === $before, 'Second run changed settings.');

@@ -13,7 +13,8 @@ The CLI setup script extracts literal `define()` settings from the old ignored
 `config.php` without running it. It creates ignored `config/local.php` and copies
 local product images to `public/uploads/`. Existing destination settings/images
 are never overwritten. Original configuration, backups, uploads and your local
-`migration_kyc_fields.sql` are kept. No credentials are printed. Settings expressed
+`migration_kyc_fields.sql` are kept. The KYC script is copied into `database/migrations/`
+for review without applying SQL. No credentials are printed. Settings expressed
 as code rather than literals require manual migration using
 `config/local.example.php` as the new format.
 
