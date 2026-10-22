@@ -1,0 +1,51 @@
+name: TypeScript migration checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  application:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      mysql:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: isolated_test_password
+          MARIADB_ROOT_HOST: '%'
+        ports:
+          - 3306/tcp
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      NODE_ENV: test
+      DB_HOST: 127.0.0.1
+      DB_USER: root
+      DB_PASSWORD: isolated_test_password
+      DB_NAME: agrimarket_node_test
+      MAIL_ENCRYPTION_KEY: '1111111111111111111111111111111111111111111111111111111111111111'
+      APP_ORIGIN: http://localhost:5173
+      COOKIE_SECURE: 'false'
+      MPESA_ENABLED: 'false'
+    steps:
+      - name: Export database port
+        run: echo "DB_PORT=${{ job.services.mysql.ports[3306] }}" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npm test
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:ui
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: typescript-browser-results
+          path: test-results
+          if-no-files-found: ignore

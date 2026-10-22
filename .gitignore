@@ -23,6 +23,18 @@ Thumbs.db
 .vscode/
 .idea/
 
+# TypeScript application and local secrets
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+coverage/
+playwright-report/
+test-results/
+storage/node-uploads/*
+!storage/node-uploads/.gitkeep
+
 # Logs
 *.log
 
