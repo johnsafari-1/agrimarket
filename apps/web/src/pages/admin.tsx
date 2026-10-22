@@ -28,7 +28,7 @@ export function Admin() {
             ['Members', summary.data.users],
             ['Listings', summary.data.products],
             ['Orders', summary.data.orders],
-            ['Verified payments', money(summary.data.paid_revenue)],
+            ['Completed payments', money(summary.data.paid_revenue)],
           ].map(([label, value]) => (
             <div className="panel stat" key={label}>
               <span>{label}</span>

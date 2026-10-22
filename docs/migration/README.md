@@ -200,7 +200,7 @@ Before switching real traffic:
 
 1. Rehearse export/restore and the additive migration on a copy. Compare legacy
    table counts, order totals and payment totals before and after migration.
-2. Verify legacy login hashes; inspect unsupported password algorithms, duplicate
+2. Deactivate legacy demo accounts or reset their shared passwords before public access (the old schema seeds accounts with `password123`). Verify administrator credentials. Verify legacy login hashes; inspect unsupported password algorithms, duplicate
    normalized emails, missing KYC columns, orphaned historical orders and timestamps.
 3. Test buyer/farmer/admin workflows, mixed-farmer orders, cancellations, concurrent
    checkout, and image links with representative copied data.
@@ -209,6 +209,7 @@ Before switching real traffic:
 5. Validate Daraja credentials, amount/phone/reference handling and callback/query
    behavior in the sandbox before enabling M-Pesa. Review legacy Card/pending online
    transactions and any refund obligations. No live payment validation is implied.
+   Reconcile existing online payments with provider evidence, including records already marked Completed; this migration preserves their status and does not retrospectively authenticate old callbacks.
 6. Configure HTTPS, same-origin static hosting for `apps/web/dist`, `/api` proxy,
    SPA route fallback, request limits and Node/worker supervision. Protect the SQL
    service; moving off PHP does not update the XAMPP database server automatically.
