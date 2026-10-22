@@ -20,7 +20,6 @@ jobs:
     env:
       NODE_ENV: test
       DB_HOST: 127.0.0.1
-      DB_PORT: ${{ job.services.mysql.ports[3306] }}
       DB_USER: root
       DB_PASSWORD: isolated_test_password
       DB_NAME: agrimarket_node_test
@@ -29,6 +28,8 @@ jobs:
       COOKIE_SECURE: 'false'
       MPESA_ENABLED: 'false'
     steps:
+      - name: Export database port
+        run: echo "DB_PORT=${{ job.services.mysql.ports[3306] }}" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
