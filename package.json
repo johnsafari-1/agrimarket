@@ -1,0 +1,37 @@
+{
+  "name": "agrimarket",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "npm run test --workspace @agrimarket/api",
+    "dev": "concurrently -k \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:web": "npm run dev --workspace @agrimarket/web",
+    "build": "npm run build --workspaces",
+    "typecheck": "npm run typecheck --workspaces",
+    "dev:api": "npm run dev --workspace @agrimarket/api",
+    "test:ui": "npm run build && node apps/api/test/prepare-browser.cjs && playwright test",
+    "format": "prettier --write \"apps/**/*.{ts,tsx,css,json,html}\" \"docs/migration/*.md\" package.json",
+    "format:check": "prettier --check \"apps/**/*.{ts,tsx,css,json,html}\" \"docs/migration/*.md\" package.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/johnsafari-1/agrimarket.git"
+  },
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/johnsafari-1/agrimarket/issues"
+  },
+  "homepage": "https://github.com/johnsafari-1/agrimarket#readme",
+  "private": true,
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "concurrently": "10.0.6",
+    "prettier": "3.9.10"
+  }
+}

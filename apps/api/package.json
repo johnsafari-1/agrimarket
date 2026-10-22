@@ -1,0 +1,45 @@
+{
+  "name": "@agrimarket/api",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "dev": "npm run build && concurrently -k \"tsc --watch --preserveWatchOutput\" \"node --watch dist/main.js\"",
+    "start": "node dist/main.js",
+    "migrate": "npm run build && node dist/migrate.js",
+    "db:init": "npm run build && node dist/migrate.js --init-empty",
+    "worker": "node dist/worker.js",
+    "test": "npm run build && node --import tsx --test --test-concurrency=1 test/*.test.ts",
+    "seed:demo": "npm run build && node dist/demo.js"
+  },
+  "type": "commonjs",
+  "private": true,
+  "dependencies": {
+    "@nestjs/common": "12.2.0",
+    "@nestjs/core": "12.2.0",
+    "@nestjs/platform-express": "12.2.0",
+    "bcryptjs": "3.0.3",
+    "cookie-parser": "1.4.7",
+    "dotenv": "18.0.9",
+    "helmet": "8.3.0",
+    "multer": "2.5.0",
+    "mysql2": "3.24.6",
+    "nodemailer": "10.2.1",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2",
+    "sharp": "0.35.5",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "1.4.10",
+    "@types/express": "5.0.6",
+    "@types/multer": "2.3.0",
+    "@types/node": "24.19.2",
+    "@types/nodemailer": "8.0.2",
+    "@types/supertest": "7.2.1",
+    "supertest": "7.3.1",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2"
+  }
+}

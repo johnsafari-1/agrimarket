@@ -1,5 +1,22 @@
 # AgriMarket
 
+## TypeScript migration
+
+This branch adds the replacement **NestJS API + React UI**, retaining MySQL/MariaDB.
+It runs without PHP/Apache. Start with [the migration and Windows setup guide](docs/migration/README.md).
+The current PHP installation and real database have not been switched over.
+
+| Directory | Replacement application |
+|---|---|
+| `apps/api/` | TypeScript API, server sessions, marketplace services, mail/payment worker and additive migrations |
+| `apps/web/` | Responsive React marketplace and buyer/farmer/admin workspaces |
+
+Use a database copy and configure `apps/api/.env` before `npm run dev`.
+`npm run build` builds both applications. Existing PHP files below remain for
+reference and rollback before cutover; they are not part of the new runtime.
+
+## Legacy PHP application
+
 Farmer–buyer marketplace — Kabarak University Group 5 project. Plain PHP 8+
 and MySQL/MariaDB, compatible with XAMPP.
 
